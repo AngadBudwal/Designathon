@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. Processing has not finished, so no product details or outcome are shown yet.",
+  "data": {
+    "analysisId": "10000000-0000-4000-8000-000000000001",
+    "processingStatus": "pending",
+    "outcome": null,
+    "submittedPageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+    "product": null,
+    "price": {
+      "listed": null,
+      "regular": null,
+      "observedAt": null
+    },
+    "composition": [],
+    "evidence": [],
+    "alternatives": [],
+    "fit": {
+      "availability": "unavailable",
+      "measurements": []
+    },
+    "warnings": [],
+    "failure": null
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. Fictional products on example.com. Not verified retailer listings. Each alternative has its own advantages, disadvantages, and uncertainties. Neither is presented as the better garment.",
+  "data": {
+    "analysisId": "10000000-0000-4000-8000-000000000002",
+    "processingStatus": "completed",
+    "outcome": "alternatives_found",
+    "submittedPageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+    "product": {
+      "title": "Hearth & Hem Crew Sweater",
+      "pageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+      "department": "womens",
+      "category": "sweater"
+    },
+    "price": {
+      "listed": { "amountMinor": 8900, "currency": "USD" },
+      "regular": null,
+      "observedAt": "2026-10-17T22:15:00.000Z"
+    },
+    "composition": [
+      {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "component": "shell",
+        "fiber": "merino wool",
+        "percent": 70,
+        "rawText": "Shell: 70% merino wool, 30% polyester",
+        "verification": "extracted",
+        "evidenceIds": ["20000000-0000-4000-8000-000000000001"]
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000002",
+        "component": "shell",
+        "fiber": "polyester",
+        "percent": 30,
+        "rawText": "Shell: 70% merino wool, 30% polyester",
+        "verification": "extracted",
+        "evidenceIds": ["20000000-0000-4000-8000-000000000001"]
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000003",
+        "component": "lining",
+        "fiber": "cotton",
+        "percent": 100,
+        "rawText": "Lining: 100% cotton",
+        "verification": "extracted",
+        "evidenceIds": ["20000000-0000-4000-8000-000000000002"]
+      }
+    ],
+    "evidence": [
+      {
+        "id": "20000000-0000-4000-8000-000000000001",
+        "sourceUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+        "excerpt": "Shell: 70% merino wool, 30% polyester",
+        "observedAt": "2026-10-17T22:15:00.000Z"
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000002",
+        "sourceUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+        "excerpt": "Lining: 100% cotton",
+        "observedAt": "2026-10-17T22:15:00.000Z"
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000003",
+        "sourceUrl": "https://shop.example.com/products/northline-wool-crew",
+        "excerpt": "Shell: 100% wool",
+        "observedAt": "2026-10-17T22:15:00.000Z"
+      },
+      {
+        "id": "20000000-0000-4000-8000-000000000004",
+        "sourceUrl": "https://shop.example.com/products/commons-unisex-crew",
+        "excerpt": "Shell: wool, nylon",
+        "observedAt": "2026-10-17T22:15:00.000Z"
+      }
+    ],
+    "alternatives": [
+      {
+        "product": {
+          "title": "Northline Wool Crew",
+          "pageUrl": "https://shop.example.com/products/northline-wool-crew",
+          "department": "mens",
+          "category": "sweater"
+        },
+        "price": {
+          "listed": { "amountMinor": 12800, "currency": "USD" },
+          "regular": null,
+          "observedAt": "2026-10-17T22:15:00.000Z"
+        },
+        "composition": [
+          {
+            "id": "30000000-0000-4000-8000-000000000004",
+            "component": "shell",
+            "fiber": "wool",
+            "percent": 100,
+            "rawText": "Shell: 100% wool",
+            "verification": "extracted",
+            "evidenceIds": ["20000000-0000-4000-8000-000000000003"]
+          }
+        ],
+        "priceDifference": {
+          "amountMinor": 3900,
+          "currency": "USD",
+          "comparedField": "listed_price"
+        },
+        "explanations": [
+          { "code": "same_category", "detail": "Both products are categorized as sweater." },
+          { "code": "shared_fiber", "detail": "Both shell descriptions list wool." },
+          {
+            "code": "different_department",
+            "detail": "The selected product is labeled womens. This alternative is labeled mens."
+          }
+        ],
+        "advantages": [
+          {
+            "code": "more_listed_natural_fiber",
+            "detail": "The shell lists 100% wool. The selected shell lists 70% merino wool and 30% polyester."
+          }
+        ],
+        "disadvantages": [
+          {
+            "code": "higher_listed_price",
+            "detail": "The listed price is $39.00 higher than the selected product."
+          }
+        ],
+        "uncertainties": [
+          {
+            "code": "unverified_composition",
+            "detail": "Fiber content is an extracted claim, not a verified fact."
+          },
+          {
+            "code": "different_component_coverage",
+            "detail": "This listing does not describe a lining. The selected product lists a cotton lining."
+          },
+          {
+            "code": "fit_unknown",
+            "detail": "Neither listing includes garment measurements."
+          }
+        ],
+        "fit": { "availability": "unavailable", "measurements": [] }
+      },
+      {
+        "product": {
+          "title": "Commons Unisex Crew",
+          "pageUrl": "https://shop.example.com/products/commons-unisex-crew",
+          "department": "unisex",
+          "category": "sweater"
+        },
+        "price": {
+          "listed": { "amountMinor": 7400, "currency": "USD" },
+          "regular": null,
+          "observedAt": "2026-10-17T22:15:00.000Z"
+        },
+        "composition": [
+          {
+            "id": "30000000-0000-4000-8000-000000000005",
+            "component": "shell",
+            "fiber": "wool",
+            "percent": null,
+            "rawText": "Shell: wool, nylon",
+            "verification": "extracted",
+            "evidenceIds": ["20000000-0000-4000-8000-000000000004"]
+          },
+          {
+            "id": "30000000-0000-4000-8000-000000000006",
+            "component": "shell",
+            "fiber": "nylon",
+            "percent": null,
+            "rawText": "Shell: wool, nylon",
+            "verification": "extracted",
+            "evidenceIds": ["20000000-0000-4000-8000-000000000004"]
+          }
+        ],
+        "priceDifference": {
+          "amountMinor": -1500,
+          "currency": "USD",
+          "comparedField": "listed_price"
+        },
+        "explanations": [
+          { "code": "same_category", "detail": "Both products are categorized as sweater." },
+          { "code": "shared_fiber", "detail": "Both shell descriptions list wool." },
+          {
+            "code": "different_department",
+            "detail": "The selected product is labeled womens. This alternative is labeled unisex."
+          }
+        ],
+        "advantages": [
+          {
+            "code": "lower_listed_price",
+            "detail": "The listed price is $15.00 lower than the selected product."
+          }
+        ],
+        "disadvantages": [],
+        "uncertainties": [
+          {
+            "code": "missing_fiber_percent",
+            "detail": "The page lists wool and nylon without percentages, so fiber shares cannot be compared."
+          },
+          {
+            "code": "unverified_composition",
+            "detail": "Fiber content is an extracted claim, not a verified fact."
+          },
+          {
+            "code": "different_component_coverage",
+            "detail": "This listing does not describe a lining. The selected product lists a cotton lining."
+          },
+          {
+            "code": "fit_unknown",
+            "detail": "Neither listing includes garment measurements."
+          }
+        ],
+        "fit": { "availability": "unavailable", "measurements": [] }
+      }
+    ],
+    "fit": { "availability": "unavailable", "measurements": [] },
+    "warnings": [
+      {
+        "code": "unverified_composition",
+        "message": "Fiber contents are extracted claims, not verified facts."
+      },
+      {
+        "code": "missing_regular_price",
+        "message": "No regular price was listed, so no discount is shown."
+      },
+      {
+        "code": "missing_measurements",
+        "message": "Garment measurements were not on the page."
+      },
+      {
+        "code": "not_a_quality_or_durability_score",
+        "message": "Listed fiber percentages are not a durability or quality score."
+      }
+    ],
+    "failure": null
+  }
+}

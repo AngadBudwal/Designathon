@@ -1,0 +1,73 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. Fictional product on example.com. Not a verified retailer listing. An empty alternatives list is a valid result.",
+  "data": {
+    "analysisId": "10000000-0000-4000-8000-000000000011",
+    "processingStatus": "completed",
+    "outcome": "no_suitable_alternative",
+    "submittedPageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+    "product": {
+      "title": "Hearth & Hem Crew Sweater",
+      "pageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+      "department": "womens",
+      "category": "sweater"
+    },
+    "price": {
+      "listed": { "amountMinor": 8900, "currency": "USD" },
+      "regular": null,
+      "observedAt": "2026-10-17T22:15:00.000Z"
+    },
+    "composition": [
+      {
+        "id": "30000000-0000-4000-8000-000000000011",
+        "component": "shell",
+        "fiber": "merino wool",
+        "percent": 70,
+        "rawText": "Shell: 70% merino wool, 30% polyester",
+        "verification": "extracted",
+        "evidenceIds": ["20000000-0000-4000-8000-000000000011"]
+      },
+      {
+        "id": "30000000-0000-4000-8000-000000000012",
+        "component": "shell",
+        "fiber": "polyester",
+        "percent": 30,
+        "rawText": "Shell: 70% merino wool, 30% polyester",
+        "verification": "extracted",
+        "evidenceIds": ["20000000-0000-4000-8000-000000000011"]
+      }
+    ],
+    "evidence": [
+      {
+        "id": "20000000-0000-4000-8000-000000000011",
+        "sourceUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+        "excerpt": "Shell: 70% merino wool, 30% polyester",
+        "observedAt": "2026-10-17T22:15:00.000Z"
+      }
+    ],
+    "alternatives": [],
+    "fit": {
+      "availability": "unavailable",
+      "measurements": []
+    },
+    "warnings": [
+      {
+        "code": "no_suitable_alternative",
+        "message": "No comparable product with usable listed composition and price was found."
+      },
+      {
+        "code": "unverified_composition",
+        "message": "Fiber contents are extracted claims, not verified facts."
+      },
+      {
+        "code": "missing_measurements",
+        "message": "Garment measurements were not on the page."
+      },
+      {
+        "code": "not_a_quality_or_durability_score",
+        "message": "Listed fiber percentages are not a durability or quality score."
+      }
+    ],
+    "failure": null
+  }
+}

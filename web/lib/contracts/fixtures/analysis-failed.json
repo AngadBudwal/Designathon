@@ -1,0 +1,28 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. A failed analysis shows a generic message only. Internal error details are never included.",
+  "data": {
+    "analysisId": "10000000-0000-4000-8000-000000000051",
+    "processingStatus": "failed",
+    "outcome": null,
+    "submittedPageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+    "product": null,
+    "price": {
+      "listed": null,
+      "regular": null,
+      "observedAt": null
+    },
+    "composition": [],
+    "evidence": [],
+    "alternatives": [],
+    "fit": {
+      "availability": "unavailable",
+      "measurements": []
+    },
+    "warnings": [],
+    "failure": {
+      "code": "processing_failed",
+      "message": "This analysis could not be completed. Try again later."
+    }
+  }
+}

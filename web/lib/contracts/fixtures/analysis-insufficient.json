@@ -1,0 +1,47 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. Fictional page on example.com. Missing fields are null or empty. Nothing here was invented to fill the gaps.",
+  "data": {
+    "analysisId": "10000000-0000-4000-8000-000000000031",
+    "processingStatus": "completed",
+    "outcome": "insufficient_information",
+    "submittedPageUrl": "https://shop.example.com/products/example-knit",
+    "product": {
+      "title": "Example Knit",
+      "pageUrl": "https://shop.example.com/products/example-knit",
+      "department": "womens",
+      "category": "sweater"
+    },
+    "price": {
+      "listed": null,
+      "regular": null,
+      "observedAt": "2026-10-17T22:25:00.000Z"
+    },
+    "composition": [],
+    "evidence": [],
+    "alternatives": [],
+    "fit": {
+      "availability": "unavailable",
+      "measurements": []
+    },
+    "warnings": [
+      {
+        "code": "insufficient_information",
+        "message": "The page did not include enough composition or price information to compare."
+      },
+      {
+        "code": "missing_composition",
+        "message": "No fiber composition was found on the page."
+      },
+      {
+        "code": "missing_price",
+        "message": "No listed price was found on the page."
+      },
+      {
+        "code": "missing_measurements",
+        "message": "Garment measurements were not on the page."
+      }
+    ],
+    "failure": null
+  }
+}

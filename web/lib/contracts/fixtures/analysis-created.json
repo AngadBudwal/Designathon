@@ -1,0 +1,10 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. Not a live analysis.",
+  "data": {
+    "analysisId": "10000000-0000-4000-8000-000000000001",
+    "pageUrl": "https://app.example.com/analyses/10000000-0000-4000-8000-000000000001",
+    "processingStatus": "pending",
+    "outcome": null
+  }
+}

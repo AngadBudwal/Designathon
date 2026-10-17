@@ -1,0 +1,30 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. This page shape is unsupported, so product is null rather than filled with guessed details.",
+  "data": {
+    "analysisId": "10000000-0000-4000-8000-000000000041",
+    "processingStatus": "completed",
+    "outcome": "unsupported_page",
+    "submittedPageUrl": "https://shop.example.com/pages/about",
+    "product": null,
+    "price": {
+      "listed": null,
+      "regular": null,
+      "observedAt": null
+    },
+    "composition": [],
+    "evidence": [],
+    "alternatives": [],
+    "fit": {
+      "availability": "unavailable",
+      "measurements": []
+    },
+    "warnings": [
+      {
+        "code": "unsupported_page",
+        "message": "This page is not a supported product page."
+      }
+    ],
+    "failure": null
+  }
+}
