@@ -183,6 +183,23 @@ describe("analysis request", () => {
     expect(AnalysisRequestSchema.safeParse(oversized).success).toBe(false);
   });
 
+  it("accepts optional product identity fields and rejects unsafe image urls", () => {
+    const parsed = AnalysisRequestSchema.parse(requestFixture());
+    expect(parsed.brand).toBe("Hearth & Hem");
+    expect(parsed.retailerProductId).toBe("HH-1042");
+
+    const missing = requestFixture() as Record<string, unknown>;
+    delete missing.brand;
+    delete missing.imageUrl;
+    missing.retailerProductId = null;
+    missing.variantLabel = null;
+    expect(AnalysisRequestSchema.safeParse(missing).success).toBe(true);
+
+    const unsafe = requestFixture();
+    unsafe.imageUrl = "javascript:alert(1)";
+    expect(AnalysisRequestSchema.safeParse(unsafe).success).toBe(false);
+  });
+
   it("does not accept the fixture wrapper as a request", () => {
     expect(AnalysisRequestSchema.safeParse(extensionRequest).success).toBe(false);
   });
@@ -284,13 +301,90 @@ describe("analysis response", () => {
     const invented = analysisFixture(noAlternative);
     invented.fit = {
       availability: "unavailable",
-      measurements: [{ name: "chest", value: 96, unit: "cm" }],
+      measurements: [{ name: "chest", value: 96, unit: "cm", sizeLabel: null, basis: "unknown" }],
     };
     expect(FullAnalysisResponseSchema.safeParse(invented).success).toBe(false);
 
     const placeholder = structuredClone(noAlternative.data) as { fit: unknown };
-    placeholder.fit = { availability: "partial", measurements: [{ name: "chest", value: null, unit: "cm" }] };
+    placeholder.fit = {
+      availability: "partial",
+      measurements: [{ name: "chest", value: null, unit: "cm", sizeLabel: "M", basis: "unknown" }],
+    };
     expect(FullAnalysisResponseSchema.safeParse(placeholder).success).toBe(false);
+  });
+
+  it("ties each measurement to a size label and measurement basis", () => {
+    const parsed = analysisFixture(alternativesFound);
+    expect(parsed.alternatives[0]?.fit.measurements).toEqual([
+      { name: "chest", value: 56, unit: "cm", sizeLabel: "M", basis: "garment_flat" },
+    ]);
+
+    const noSize = analysisFixture(alternativesFound);
+    const measurement = noSize.alternatives[0]?.fit.measurements[0];
+    if (measurement) {
+      measurement.sizeLabel = null;
+      measurement.basis = "unknown";
+    }
+    expect(FullAnalysisResponseSchema.safeParse(noSize).success).toBe(true);
+
+    const raw = () =>
+      structuredClone(alternativesFound.data) as {
+        alternatives: { fit: { measurements: Record<string, unknown>[] } }[];
+      };
+
+    const missingBasis = raw();
+    delete missingBasis.alternatives[0].fit.measurements[0].basis;
+    expect(FullAnalysisResponseSchema.safeParse(missingBasis).success).toBe(false);
+
+    const badBasis = raw();
+    badBasis.alternatives[0].fit.measurements[0].basis = "estimated";
+    expect(FullAnalysisResponseSchema.safeParse(badBasis).success).toBe(false);
+
+    const sizeMapping = raw();
+    sizeMapping.alternatives[0].fit.measurements[0].womensEquivalentSize = "L";
+    expect(FullAnalysisResponseSchema.safeParse(sizeMapping).success).toBe(false);
+  });
+
+  it("validates product identity fields and keeps missing ones null", () => {
+    const parsed = analysisFixture(alternativesFound);
+    expect(parsed.product?.brand).toBe("Hearth & Hem");
+    const commons = parsed.alternatives[1]?.product;
+    expect(commons?.imageUrl).toBeNull();
+    expect(commons?.retailerProductId).toBeNull();
+    expect(commons?.variantLabel).toBeNull();
+
+    const badImage = analysisFixture(alternativesFound);
+    if (badImage.product) badImage.product.imageUrl = "data:image/png;base64,AAAA";
+    expect(FullAnalysisResponseSchema.safeParse(badImage).success).toBe(false);
+
+    const badId = analysisFixture(alternativesFound);
+    if (badId.product) badId.product.id = "product-1";
+    expect(FullAnalysisResponseSchema.safeParse(badId).success).toBe(false);
+  });
+
+  it("rejects material claims that cite another product's evidence", () => {
+    const crossed = analysisFixture(alternativesFound);
+    const selectedEvidenceId = crossed.composition[0]?.evidenceIds[0];
+    const commonsClaim = crossed.alternatives[1]?.composition[0];
+    if (commonsClaim && selectedEvidenceId) {
+      commonsClaim.evidenceIds = [selectedEvidenceId];
+    }
+    const result = FullAnalysisResponseSchema.safeParse(crossed);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toContain(
+        "Material claim references evidence from a different product.",
+      );
+    }
+
+    const orphan = analysisFixture(alternativesFound);
+    if (orphan.evidence[0]) orphan.evidence[0].productId = "40000000-0000-4000-8000-000000000099";
+    expect(FullAnalysisResponseSchema.safeParse(orphan).success).toBe(false);
+
+    const duplicate = analysisFixture(alternativesFound);
+    const selectedId = duplicate.product?.id;
+    if (duplicate.alternatives[0] && selectedId) duplicate.alternatives[0].product.id = selectedId;
+    expect(FullAnalysisResponseSchema.safeParse(duplicate).success).toBe(false);
   });
 
   it("rejects price differences that are invented or cross currencies", () => {

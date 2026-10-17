@@ -7,8 +7,13 @@
     "outcome": "no_suitable_alternative",
     "submittedPageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
     "product": {
+      "id": "40000000-0000-4000-8000-000000000011",
       "title": "Hearth & Hem Crew Sweater",
+      "brand": "Hearth & Hem",
       "pageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+      "imageUrl": "https://images.example.com/products/hearth-hem-crew-sweater-oat.jpg",
+      "retailerProductId": "HH-1042",
+      "variantLabel": "Oat",
       "department": "womens",
       "category": "sweater"
     },
@@ -40,6 +45,7 @@
     "evidence": [
       {
         "id": "20000000-0000-4000-8000-000000000011",
+        "productId": "40000000-0000-4000-8000-000000000011",
         "sourceUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
         "excerpt": "Shell: 70% merino wool, 30% polyester",
         "observedAt": "2026-10-17T22:15:00.000Z"

@@ -6,6 +6,10 @@
     "capturedAt": "2026-10-17T22:15:00.000Z",
     "extractorVersion": "0.1.0",
     "title": "Hearth & Hem Crew Sweater",
+    "brand": "Hearth & Hem",
+    "imageUrl": "https://images.example.com/products/hearth-hem-crew-sweater-oat.jpg",
+    "retailerProductId": "HH-1042",
+    "variantLabel": "Oat",
     "department": "womens",
     "category": "sweater",
     "listedPrice": {

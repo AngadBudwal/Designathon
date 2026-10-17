@@ -7,8 +7,13 @@
     "outcome": "insufficient_information",
     "submittedPageUrl": "https://shop.example.com/products/example-knit",
     "product": {
+      "id": "40000000-0000-4000-8000-000000000031",
       "title": "Example Knit",
+      "brand": null,
       "pageUrl": "https://shop.example.com/products/example-knit",
+      "imageUrl": null,
+      "retailerProductId": null,
+      "variantLabel": null,
       "department": "womens",
       "category": "sweater"
     },

@@ -1,11 +1,15 @@
 import { z } from "zod";
 
 /** Bump this when a contract field or status changes, and note it in lib/contracts/README.md. */
-export const CONTRACT_VERSION = "2.0.0";
+export const CONTRACT_VERSION = "3.0.0";
 
 export const LIMITS = {
   url: 2048,
   title: 300,
+  brand: 120,
+  retailerProductId: 120,
+  variantLabel: 120,
+  sizeLabel: 40,
   category: 120,
   extractorVersion: 40,
   rawText: 2000,

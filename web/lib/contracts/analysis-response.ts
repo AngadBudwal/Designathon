@@ -13,8 +13,10 @@ import {
   VerificationStatusSchema,
 } from "./common";
 
+/** productId is the product this excerpt was captured from. Claims may only cite their own product's evidence. */
 export const EvidenceSchema = z.strictObject({
   id: z.string().uuid(),
+  productId: z.string().uuid(),
   sourceUrl: HttpUrlSchema,
   excerpt: z.string().trim().min(1).max(LIMITS.excerpt),
   observedAt: TimestampSchema,
@@ -31,10 +33,29 @@ export const MaterialFactSchema = z.strictObject({
   evidenceIds: z.array(z.string().uuid()).min(1).max(5),
 });
 
+/**
+ * garment_flat: garment laid flat, such as half chest.
+ * garment_circumference: full garment circumference.
+ * body: the body measurement a size is meant for.
+ * unknown: the page did not say.
+ */
+export const MeasurementBasisSchema = z.enum([
+  "garment_flat",
+  "garment_circumference",
+  "body",
+  "unknown",
+]);
+
+/**
+ * sizeLabel is the retailer's own label, such as "M" or "8". Labels are not comparable
+ * across departments or retailers; only listed measurements are.
+ */
 export const MeasurementSchema = z.strictObject({
   name: z.string().trim().min(1).max(40),
   value: z.number().positive(),
   unit: z.enum(["cm", "in"]),
+  sizeLabel: z.string().trim().min(1).max(LIMITS.sizeLabel).nullable(),
+  basis: MeasurementBasisSchema,
 });
 
 /**
@@ -129,9 +150,15 @@ export const WarningSchema = z.strictObject({
   message: z.string().trim().min(1).max(LIMITS.warningMessage),
 });
 
+/** id is backend-assigned. Other nullable fields are null when the page did not show them. */
 export const ProductSummarySchema = z.strictObject({
+  id: z.string().uuid(),
   title: z.string().trim().min(1).max(LIMITS.title).nullable(),
+  brand: z.string().trim().min(1).max(LIMITS.brand).nullable(),
   pageUrl: HttpUrlSchema,
+  imageUrl: HttpUrlSchema.nullable(),
+  retailerProductId: z.string().trim().min(1).max(LIMITS.retailerProductId).nullable(),
+  variantLabel: z.string().trim().min(1).max(LIMITS.variantLabel).nullable(),
   department: DepartmentSchema,
   category: z.string().trim().min(1).max(LIMITS.category).nullable(),
 });
@@ -247,22 +274,57 @@ export const FullAnalysisResponseSchema = z
       });
     }
 
-    const evidenceIds = new Set(analysis.evidence.map((item) => item.id));
+    const productIds = [
+      ...(analysis.product ? [analysis.product.id] : []),
+      ...analysis.alternatives.map((alternative) => alternative.product.id),
+    ];
+    const knownProductIds = new Set(productIds);
+    if (knownProductIds.size !== productIds.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Each product in an analysis must have a unique id.",
+        path: ["alternatives"],
+      });
+    }
+
+    analysis.evidence.forEach((item, index) => {
+      if (!knownProductIds.has(item.productId)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Evidence must belong to a product in this analysis.",
+          path: ["evidence", index, "productId"],
+        });
+      }
+    });
+
+    const evidenceProduct = new Map(analysis.evidence.map((item) => [item.id, item.productId]));
     const claims = [
-      ...analysis.composition.map((claim, index) => ({ claim, path: ["composition", index] })),
+      ...analysis.composition.map((claim, index) => ({
+        claim,
+        ownerId: analysis.product?.id ?? null,
+        path: ["composition", index],
+      })),
       ...analysis.alternatives.flatMap((alternative, alternativeIndex) =>
         alternative.composition.map((claim, claimIndex) => ({
           claim,
+          ownerId: alternative.product.id,
           path: ["alternatives", alternativeIndex, "composition", claimIndex],
         })),
       ),
     ];
-    for (const { claim, path } of claims) {
+    for (const { claim, ownerId, path } of claims) {
       for (const evidenceId of claim.evidenceIds) {
-        if (!evidenceIds.has(evidenceId)) {
+        const evidenceOwner = evidenceProduct.get(evidenceId);
+        if (evidenceOwner === undefined) {
           ctx.addIssue({
             code: "custom",
             message: "Material claim references evidence that is not on this analysis.",
+            path: [...path, "evidenceIds"],
+          });
+        } else if (evidenceOwner !== ownerId) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Material claim references evidence from a different product.",
             path: [...path, "evidenceIds"],
           });
         }
@@ -325,6 +387,7 @@ export const FullAnalysisResponseSchema = z
 
 export type Evidence = z.infer<typeof EvidenceSchema>;
 export type MaterialFact = z.infer<typeof MaterialFactSchema>;
+export type MeasurementBasis = z.infer<typeof MeasurementBasisSchema>;
 export type Measurement = z.infer<typeof MeasurementSchema>;
 export type Fit = z.infer<typeof FitSchema>;
 export type PriceSnapshot = z.infer<typeof PriceSnapshotSchema>;

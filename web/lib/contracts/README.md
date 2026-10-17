@@ -1,6 +1,6 @@
 # Shared API contracts
 
-Version: `2.0.0` (`CONTRACT_VERSION` in `web/lib/contracts/common.ts`).
+Version: `3.0.0` (`CONTRACT_VERSION` in `web/lib/contracts/common.ts`).
 
 These Zod schemas are the interface between the Chrome extension, the backend, and the website. They do not call a database or an AI service. Website code can import them from `@/lib/contracts`. There is no `server-only` dependency.
 
@@ -36,6 +36,7 @@ Everything the extension sends is untrusted.
 - The request has no verification field. Strict objects reject `verification`, `verified`, or any other unknown key at every level.
 - The backend stores extension composition as `extracted`. Only backend processing may later produce `verified`, and a verified claim must still reference stored evidence by id.
 - Text fields are trimmed, length-limited, and rejected if they contain HTML tags. Send page text, not markup. A plain `<` such as `<5% elastane` is allowed.
+- `brand`, `imageUrl`, `retailerProductId`, and `variantLabel` are extracted page values, not verified facts. The backend does not download or cache images.
 - The synthetic fixtures contain no `verified` claims.
 
 ## Request: extension payload
@@ -48,6 +49,10 @@ Schema: `AnalysisRequestSchema` in `web/lib/contracts/analysis-request.ts`.
 | `capturedAt` | yes | — | ISO-8601 with `Z` or a numeric offset. |
 | `extractorVersion` | yes | — | Letters, numbers, `.`, `_`, `-`. Max 40 characters. |
 | `title` | no | `null` or omit | Max 300 characters. |
+| `brand` | no | `null` or omit | Max 120 characters. |
+| `imageUrl` | no | `null` or omit | Absolute `http` or `https` image URL shown on the page. Not fetched by the backend. |
+| `retailerProductId` | no | `null` or omit | Retailer's own product id or SKU, if shown. Max 120 characters. |
+| `variantLabel` | no | `null` or omit | Color or variant shown on the page, such as `Oat`. Max 120 characters. |
 | `department` | yes | `unknown` | `womens`, `mens`, `unisex`, or `unknown`. Do not guess. |
 | `category` | no | `null` or omit | Max 120 characters. |
 | `listedPrice` | no | `null` or omit | Integer minor units plus a 3-letter currency. `8900` USD is $89.00. |
@@ -84,14 +89,14 @@ Schema: `FullAnalysisResponseSchema`.
 | `processingStatus` | — | See above. |
 | `outcome` | `null` | See above. |
 | `submittedPageUrl` | — | The retailer URL the extension sent. Always present. |
-| `product` | `null` | Required for `alternatives_found` and `no_suitable_alternative`. `null` for pending, failed, and unsupported pages. `title` and `category` may be `null`. |
+| `product` | `null` | See "Product summary" below. Required for `alternatives_found` and `no_suitable_alternative`. `null` for pending, failed, and unsupported pages. |
 | `price.listed` | `null` | No listed price was on the page. |
 | `price.regular` | `null` | No regular price was listed. Do not render a discount. |
 | `price.observedAt` | `null` | When the price fields were read. |
 | `composition` | `[]` | `{ id, component, fiber, percent, rawText, verification, evidenceIds }`. |
-| `evidence` | `[]` | `{ id, sourceUrl, excerpt, observedAt }`. Every claim must point at these ids. |
+| `evidence` | `[]` | `{ id, productId, sourceUrl, excerpt, observedAt }` for the selected product and every alternative. See "Evidence ownership". |
 | `alternatives` | `[]` | Only non-empty when `outcome` is `alternatives_found`. |
-| `fit` | `availability: "unavailable"`, `measurements: []` | Only measurements listed on the page appear. Unknown ones are absent, never zero. |
+| `fit` | `availability: "unavailable"`, `measurements: []` | See "Fit" below. |
 | `warnings` | `[]` | `{ code, message }`. |
 | `failure` | `null` | `{ code: "processing_failed", message }` only when `failed`. |
 
@@ -105,6 +110,42 @@ Each alternative has:
 - `priceDifference`: alternative listed price minus selected listed price, in minor units. Negative means the alternative is listed lower. `null` when either listed price is missing or the currencies differ. The schema checks the arithmetic, and `lower_listed_price` / `higher_listed_price` must match its sign.
 
 `advantages`, `disadvantages`, and `uncertainties` may each be empty. "Natural fiber" compares listed percentages only. It is not a durability or quality score.
+
+### Product summary
+
+The selected product and every alternative use the same shape.
+
+| Field | Empty value | Notes |
+|---|---|---|
+| `id` | — | Backend-assigned UUID. Unique within an analysis. |
+| `title` | `null` | Max 300 characters. |
+| `brand` | `null` | Max 120 characters. |
+| `pageUrl` | — | Retailer product page. |
+| `imageUrl` | `null` | Image URL from the page. Not downloaded or cached. Show a placeholder when `null`. |
+| `retailerProductId` | `null` | Retailer's own id or SKU. |
+| `variantLabel` | `null` | Color or variant, such as `Oat`. |
+| `department` | — | `unknown` when the page did not say. |
+| `category` | `null` | Max 120 characters. |
+
+### Evidence ownership
+
+Each evidence item has a `productId`. A material claim may only cite evidence whose `productId` is the product that claim describes: the selected `product.id` for top-level `composition`, or that alternative's `product.id`. The schema also rejects evidence for a product that is not in the analysis, and duplicate product ids. This matches a future `evidence.product_id` foreign key.
+
+### Fit
+
+`fit` is `{ availability, measurements }`. Each measurement is:
+
+| Field | Notes |
+|---|---|
+| `name` | Such as `chest` or `length`. |
+| `value` | Positive number. Never zero or a placeholder. |
+| `unit` | `cm` or `in`. |
+| `sizeLabel` | Retailer size label, such as `M` or `8`, or `null` if the page did not tie the measurement to a size. |
+| `basis` | `garment_flat`, `garment_circumference`, `body`, or `unknown`. Use `unknown` when the page did not say. |
+
+- Only measurements listed on the page appear. Unknown measurements are omitted.
+- `availability: "unavailable"` must have no measurements. `listed` must have at least one.
+- Size labels are retailer strings. A women's `M` and a men's `M` are not the same size, and the contract has no size-conversion field. Compare fit only through listed measurements with the same `basis` and `unit`.
 
 ## Error
 
@@ -165,14 +206,14 @@ Paths are relative to `web/`. Each file is wrapped:
 { "synthetic": true, "disclaimer": "Synthetic fixture ...", "data": {} }
 ```
 
-Use `data`, not the wrapper. All products are fictional and use `example.com`.
+Use `data`, not the wrapper. All products, brands, images, and retailer ids are fictional and use `example.com`. The image URLs do not resolve.
 
 | File | Shape | Scenario |
 |---|---|---|
-| `lib/contracts/fixtures/extension-request.json` | Request | Sweater with shell and lining |
+| `lib/contracts/fixtures/extension-request.json` | Request | Sweater with brand, image, retailer id, variant, shell, and lining |
 | `lib/contracts/fixtures/analysis-created.json` | Created | `pending` |
 | `lib/contracts/fixtures/analysis-pending.json` | Full | `pending`, no product yet |
-| `lib/contracts/fixtures/analysis-alternatives-found.json` | Full | Two alternatives with different advantages and uncertainties |
+| `lib/contracts/fixtures/analysis-alternatives-found.json` | Full | Two alternatives with different advantages and uncertainties. One lists a size-M flat chest measurement; one has no image, retailer id, or variant. |
 | `lib/contracts/fixtures/analysis-no-alternative.json` | Full | `completed`, `no_suitable_alternative` |
 | `lib/contracts/fixtures/analysis-insufficient.json` | Full | `completed`, `insufficient_information` |
 | `lib/contracts/fixtures/analysis-unsupported.json` | Full | `completed`, `unsupported_page`, `product: null` |
@@ -191,5 +232,6 @@ Use the same `parse` call on a future `GET /api/analyses/:id` body. When mocking
 
 ## Changelog
 
+- `3.0.0` — Breaking. Product summaries now require `id`, `brand`, `imageUrl`, `retailerProductId`, and `variantLabel` (nullable except `id`). Evidence now requires `productId`, and claims may only cite their own product's evidence. Measurements now require `sizeLabel` (nullable) and `basis`. The request accepts optional `brand`, `imageUrl`, `retailerProductId`, and `variantLabel`.
 - `2.0.0` — Split `status` into `processingStatus` and `outcome`. Added `failed` with a client-safe `failure`. Replaced per-alternative `tradeoffs` with `advantages`, `disadvantages`, and `uncertainties`. Added `submittedPageUrl` and made `product` nullable. Rejected HTML in request text. Replaced the `analysis-with-alternative` and `analysis-alternative-found` fixtures with `analysis-alternatives-found`, and added `analysis-pending` and `analysis-failed`.
 - `1.0.0` — Initial request, created response, full analysis, and error contracts.

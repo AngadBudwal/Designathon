@@ -1,14 +1,19 @@
 {
   "synthetic": true,
-  "disclaimer": "Synthetic fixture for local UI mocks. Fictional products on example.com. Not verified retailer listings. Each alternative has its own advantages, disadvantages, and uncertainties. Neither is presented as the better garment.",
+  "disclaimer": "Synthetic fixture for local UI mocks. Fictional products, brands, images, and retailer IDs on example.com. Not verified retailer listings. Each alternative has its own advantages, disadvantages, and uncertainties. Neither is presented as the better garment.",
   "data": {
     "analysisId": "10000000-0000-4000-8000-000000000002",
     "processingStatus": "completed",
     "outcome": "alternatives_found",
     "submittedPageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
     "product": {
+      "id": "40000000-0000-4000-8000-000000000001",
       "title": "Hearth & Hem Crew Sweater",
+      "brand": "Hearth & Hem",
       "pageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+      "imageUrl": "https://images.example.com/products/hearth-hem-crew-sweater-oat.jpg",
+      "retailerProductId": "HH-1042",
+      "variantLabel": "Oat",
       "department": "womens",
       "category": "sweater"
     },
@@ -49,24 +54,28 @@
     "evidence": [
       {
         "id": "20000000-0000-4000-8000-000000000001",
+        "productId": "40000000-0000-4000-8000-000000000001",
         "sourceUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
         "excerpt": "Shell: 70% merino wool, 30% polyester",
         "observedAt": "2026-10-17T22:15:00.000Z"
       },
       {
         "id": "20000000-0000-4000-8000-000000000002",
+        "productId": "40000000-0000-4000-8000-000000000001",
         "sourceUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
         "excerpt": "Lining: 100% cotton",
         "observedAt": "2026-10-17T22:15:00.000Z"
       },
       {
         "id": "20000000-0000-4000-8000-000000000003",
+        "productId": "40000000-0000-4000-8000-000000000002",
         "sourceUrl": "https://shop.example.com/products/northline-wool-crew",
         "excerpt": "Shell: 100% wool",
         "observedAt": "2026-10-17T22:15:00.000Z"
       },
       {
         "id": "20000000-0000-4000-8000-000000000004",
+        "productId": "40000000-0000-4000-8000-000000000003",
         "sourceUrl": "https://shop.example.com/products/commons-unisex-crew",
         "excerpt": "Shell: wool, nylon",
         "observedAt": "2026-10-17T22:15:00.000Z"
@@ -75,8 +84,13 @@
     "alternatives": [
       {
         "product": {
+          "id": "40000000-0000-4000-8000-000000000002",
           "title": "Northline Wool Crew",
+          "brand": "Northline",
           "pageUrl": "https://shop.example.com/products/northline-wool-crew",
+          "imageUrl": "https://images.example.com/products/northline-wool-crew-charcoal.jpg",
+          "retailerProductId": "NL-220",
+          "variantLabel": "Charcoal",
           "department": "mens",
           "category": "sweater"
         },
@@ -132,15 +146,31 @@
           },
           {
             "code": "fit_unknown",
-            "detail": "Neither listing includes garment measurements."
+            "detail": "This listing gives a chest measurement for size M, but the selected product lists no measurements, so fit cannot be compared."
           }
         ],
-        "fit": { "availability": "unavailable", "measurements": [] }
+        "fit": {
+          "availability": "partial",
+          "measurements": [
+            {
+              "name": "chest",
+              "value": 56,
+              "unit": "cm",
+              "sizeLabel": "M",
+              "basis": "garment_flat"
+            }
+          ]
+        }
       },
       {
         "product": {
+          "id": "40000000-0000-4000-8000-000000000003",
           "title": "Commons Unisex Crew",
+          "brand": "Commons",
           "pageUrl": "https://shop.example.com/products/commons-unisex-crew",
+          "imageUrl": null,
+          "retailerProductId": null,
+          "variantLabel": null,
           "department": "unisex",
           "category": "sweater"
         },

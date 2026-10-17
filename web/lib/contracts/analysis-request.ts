@@ -40,6 +40,8 @@ const OptionalTextSchema = (max: number) => plainText(max).nullable().optional()
  * Unknown keys are rejected. Omit a field or send null when the page did not show it.
  * Department is required; use "unknown" instead of guessing.
  * regularPrice null means no regular price was listed. It does not mean the item is undiscounted.
+ * brand, imageUrl, retailerProductId, and variantLabel are extracted from the page, not verified.
+ * The backend stores imageUrl as given and does not fetch it.
  */
 export const AnalysisRequestSchema = z.strictObject({
   pageUrl: HttpUrlSchema,
@@ -51,6 +53,10 @@ export const AnalysisRequestSchema = z.strictObject({
     .max(LIMITS.extractorVersion)
     .regex(/^[A-Za-z0-9._-]+$/),
   title: OptionalTextSchema(LIMITS.title),
+  brand: OptionalTextSchema(LIMITS.brand),
+  imageUrl: HttpUrlSchema.nullable().optional(),
+  retailerProductId: OptionalTextSchema(LIMITS.retailerProductId),
+  variantLabel: OptionalTextSchema(LIMITS.variantLabel),
   department: DepartmentSchema,
   category: OptionalTextSchema(LIMITS.category),
   listedPrice: MoneySchema.nullable().optional(),
