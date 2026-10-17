@@ -1,0 +1,44 @@
+{
+  "synthetic": true,
+  "disclaimer": "Synthetic fixture for local UI mocks. Fictional product on example.com. Not a verified retailer listing.",
+  "data": {
+    "pageUrl": "https://shop.example.com/products/hearth-hem-crew-sweater",
+    "capturedAt": "2026-10-17T22:15:00.000Z",
+    "extractorVersion": "0.1.0",
+    "title": "Hearth & Hem Crew Sweater",
+    "brand": "Hearth & Hem",
+    "imageUrl": "https://images.example.com/products/hearth-hem-crew-sweater-oat.jpg",
+    "retailerProductId": "HH-1042",
+    "variantLabel": "Oat",
+    "department": "womens",
+    "category": "sweater",
+    "listedPrice": {
+      "amountMinor": 8900,
+      "currency": "USD"
+    },
+    "regularPrice": null,
+    "composition": [
+      {
+        "component": "shell",
+        "rawText": "Shell: 70% merino wool, 30% polyester",
+        "fibers": [
+          { "name": "merino wool", "percent": 70 },
+          { "name": "polyester", "percent": 30 }
+        ],
+        "excerpts": [
+          { "text": "Shell: 70% merino wool, 30% polyester" }
+        ]
+      },
+      {
+        "component": "lining",
+        "rawText": "Lining: 100% cotton",
+        "fibers": [
+          { "name": "cotton", "percent": 100 }
+        ],
+        "excerpts": [
+          { "text": "Lining: 100% cotton" }
+        ]
+      }
+    ]
+  }
+}
