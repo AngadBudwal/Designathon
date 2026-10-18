@@ -1,0 +1,72 @@
+{
+  "provenance": {
+    "retailer": "H&M US",
+    "method": "Manual review of public product pages (fetched individually; no crawler). Values copied as listed on each page.",
+    "capturedAt": "2026-10-18T02:30:00.000Z",
+    "notes": [
+      "The US pages list one unlabeled \"Composition\" line, so it is stored as component \"other\", not \"shell\".",
+      "Prices are the listed price shown on the page in USD. No regular or sale price was shown separately, so regular price is null.",
+      "Claims are stored as \"extracted\": they are what the retailer lists and have not been independently verified.",
+      "Neckline is listed as \"Round Neck\" on all three pages. The schema has no neckline field, so it is kept only in the excerpts."
+    ]
+  },
+  "products": [
+    {
+      "url": "https://www2.hm.com/en_us/productpage.1232050001.html",
+      "retailerProductId": "1232050001",
+      "title": "Regular Fit Fine-Knit Sweater",
+      "brand": "H&M",
+      "department": "mens",
+      "category": "sweater",
+      "variantLabel": "Cream",
+      "imageUrl": "https://image.hm.com/assets/hm/d4/3b/d43b9223cdecf24b387966857ac927b43d1720aa.jpg?imwidth=1260",
+      "listedPrice": { "amountMinor": 3499, "currency": "USD" },
+      "composition": {
+        "component": "other",
+        "excerpt": "Composition: Polyester 53%, Polyamide 24%, Acrylic 13%, Wool 7%, Spandex 3%",
+        "fibers": [
+          ["polyester", 53],
+          ["polyamide", 24],
+          ["acrylic", 13],
+          ["wool", 7],
+          ["spandex", 3]
+        ]
+      },
+      "otherExcerpts": ["Price: $34.99", "Neckline: Round Neck"]
+    },
+    {
+      "url": "https://www2.hm.com/en_us/productpage.1356594001.html",
+      "retailerProductId": "1356594001",
+      "title": "Regular-Fit Merino Wool Sweater",
+      "brand": "H&M",
+      "department": "mens",
+      "category": "sweater",
+      "variantLabel": "Black",
+      "imageUrl": "https://image.hm.com/assets/hm/c2/a7/c2a7bad870d8176f229fcf96fb483f6dd9367a4e.jpg?imwidth=1260",
+      "listedPrice": { "amountMinor": 5999, "currency": "USD" },
+      "composition": {
+        "component": "other",
+        "excerpt": "Composition: Wool 100%",
+        "fibers": [["wool", 100]]
+      },
+      "otherExcerpts": ["Price: $59.99", "Neckline: Round Neck"]
+    },
+    {
+      "url": "https://www2.hm.com/en_us/productpage.1324110003.html",
+      "retailerProductId": "1324110003",
+      "title": "Merino Wool Sweater",
+      "brand": "H&M",
+      "department": "womens",
+      "category": "sweater",
+      "variantLabel": "Blue",
+      "imageUrl": "https://image.hm.com/assets/hm/8f/99/8f99aaf5e372a49c06a1b1129c33c53409e004c0.jpg?imwidth=1260",
+      "listedPrice": { "amountMinor": 5999, "currency": "USD" },
+      "composition": {
+        "component": "other",
+        "excerpt": "Composition: Wool 100%",
+        "fibers": [["wool", 100]]
+      },
+      "otherExcerpts": ["Price: $59.99", "Neckline: Round Neck"]
+    }
+  ]
+}

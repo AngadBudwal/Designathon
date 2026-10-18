@@ -83,9 +83,22 @@ export type AnalysisRow = {
   outcome: ComparisonOutcome | null;
   failure_code: "processing_failed" | null;
   failure_message: string | null;
+  finished_at: string | null;
   /** capturedAt and extractorVersion from request_payload. */
   captured_at: string | null;
   extractor_version: string | null;
+};
+
+export type ReasonKind = "explanation" | "advantage" | "disadvantage" | "uncertainty";
+
+export type ComparableRow = { analysis_id: string; product_id: string; variant_id: string | null };
+
+export type ComparableReasonRow = {
+  analysis_id: string;
+  product_id: string;
+  kind: ReasonKind;
+  code: string;
+  detail: string;
 };
 
 /** One capture is the evidence an extension submission stored for a product. */
@@ -126,6 +139,22 @@ export interface AnalysisStore {
 
   getAnalysis(id: string): Promise<AnalysisRow | null>;
   insertAnalysis(row: NewAnalysis): Promise<void>;
+  /** Sets completed only if the analysis is still pending. Returns false otherwise. */
+  completeAnalysis(id: string, outcome: ComparisonOutcome, finishedAt: string): Promise<boolean>;
+
+  /** Catalog reads used by matching. Results are capped; the catalog is small for now. */
+  listProductsByIds(ids: string[]): Promise<ProductRow[]>;
+  listCandidateProducts(departments: Department[], excludeProductId: string): Promise<ProductRow[]>;
+  listEvidenceForProducts(productIds: string[], capturedAtOrBefore: string): Promise<EvidenceRow[]>;
+  listClaimsForEvidence(evidenceIds: string[]): Promise<MaterialClaimRow[]>;
+  listPricesForProducts(productIds: string[], observedAtOrBefore: string): Promise<PriceObservationRow[]>;
+
+  /** Comparables in insertion order, which is ranking order. */
+  listComparables(analysisId: string): Promise<ComparableRow[]>;
+  listComparableReasons(analysisId: string): Promise<ComparableReasonRow[]>;
+  deleteComparables(analysisId: string): Promise<void>;
+  insertComparable(row: ComparableRow): Promise<void>;
+  insertComparableReasons(rows: ComparableReasonRow[]): Promise<void>;
 }
 
 export type StoreErrorKind =
