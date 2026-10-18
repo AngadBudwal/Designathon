@@ -6,6 +6,7 @@ Supabase PostgreSQL schema for the fashion analysis backend.
 |---|---|
 | `supabase/migrations/20261017235500_initial_schema.sql` | Initial schema: tables, constraints, indexes, RLS, grants. |
 | `supabase/checks/schema_checks.sql` | Constraint and access checks. Runs in one transaction and rolls back. |
+| `supabase/config.toml` | Supabase CLI configuration from `supabase init`. Contains no credentials. |
 | `web/.env.example` | Server-only environment variable names. Placeholders only. |
 
 No product data is included. The JSON fixtures in `web/lib/contracts/fixtures/` are synthetic and are for development only. Do not load them into a real project.
@@ -98,34 +99,90 @@ Any table added later needs the same treatment: enable RLS and revoke `anon` and
 
 ## Setup
 
-A Supabase project has to be created manually. None exists yet.
+The development project is `fashion-intelligence-dev`. Run these commands from the repository root. They were tested with CLI 2.121.0, and Docker is not required.
 
-1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard). Choose a region and save the database password somewhere private.
-2. Apply the migration, using either option:
-   - **SQL editor:** open SQL Editor, paste `supabase/migrations/20261017235500_initial_schema.sql`, and run it once.
-   - **Supabase CLI**, from the repository root:
+1. Log in in an interactive terminal (the browser flow needs a TTY). The access token is stored in the OS keychain, not in the repository.
 
-     ```sh
-     npx supabase login
-     npx supabase init          # creates supabase/config.toml; keep the existing migrations
-     npx supabase link --project-ref <your-project-ref>
-     npx supabase db push
-     ```
+   ```sh
+   npx supabase@2.121.0 login
+   ```
 
-3. Optional: run `supabase/checks/schema_checks.sql` in the SQL editor. It ends with `all schema checks passed` and rolls everything back.
-4. Copy `web/.env.example` to `web/.env.local` and fill in the two values.
+2. Link the project. The CLI reaches the database through a temporary login role, so no database password is needed. Link state goes in `supabase/.temp/`, which is git-ignored.
+
+   ```sh
+   npx supabase@2.121.0 link --project-ref <project-ref>
+   ```
+
+3. Check migration history, then push.
+
+   ```sh
+   npx supabase@2.121.0 migration list --linked
+   npx supabase@2.121.0 db push --linked --dry-run
+   npx supabase@2.121.0 db push --linked
+   ```
+
+4. Optional: run the checks. The output should end with `all schema checks passed`, and everything is rolled back.
+
+   ```sh
+   npx supabase@2.121.0 db query --linked -f supabase/checks/schema_checks.sql
+   ```
+
+5. Copy `web/.env.example` to `web/.env.local` and fill in the two values.
+
+### Future migrations
+
+- Create every schema change as a new file: `npx supabase@2.121.0 migration new <name>`. Never edit a migration that has already been pushed.
+- Review the change with `db push --linked --dry-run`, then apply it with `db push --linked`.
+- Don't paste tracked migrations into the SQL Editor. SQL Editor changes skip the migration history table, so the next `db push` gets out of sync with the database.
+- Use the SQL Editor only for read-only queries or for scripts that roll back, such as `checks/schema_checks.sql`.
+- Never run `supabase db reset --linked` against a shared project. It drops all data.
+- New tables need RLS enabled and `anon`/`authenticated` privileges revoked in the same migration.
 
 ## Validation status
 
-Run on 2026-10-17:
+### Supabase (2026-10-17)
 
-- The migration and `schema_checks.sql` were executed on **PGlite 0.5.10 (PostgreSQL 18.6 compiled to WebAssembly)**. All checks passed, and the rollback left no rows.
-- Before the migration, the runner created `anon`, `authenticated`, and `service_role`, and granted them default privileges on new tables, to approximate Supabase. After the migration, `anon` and `authenticated` had zero table grants, and all 10 tables had RLS enabled.
-- **Not tested yet:**
-  - A real Supabase project. Supabase currently runs PostgreSQL 15 or 17, and the schema uses nothing newer than PostgreSQL 15 (`nulls not distinct`).
-  - Supabase's own role setup.
-  - `supabase db push`.
-  - Query performance at realistic data sizes.
+Run on project `fashion-intelligence-dev`, PostgreSQL 17.11 (Supabase image 17.11.0.003), with CLI 2.121.0.
+
+- **Before the push:** `public` had no tables or functions, and there was no migration history. The dry run listed only `20261017235500_initial_schema.sql`, with no seeds, roles, or vault changes.
+- **Push:** `db push --linked` applied the migration without errors. `migration list` shows `20261017235500` both locally and remotely, and `supabase_migrations.schema_migrations` has one row, `20261017235500 initial_schema`.
+- **`schema_checks.sql`:** run with `db query --linked`. It returned `all schema checks passed`. The checks cover:
+  - Defaults and duplicate products.
+  - Ownership of evidence and variants (claims, prices, and measurements citing another product's rows were rejected).
+  - Fiber percentages and components.
+  - Price sign, currency, and append-only history.
+  - Measurements.
+  - The analysis lifecycle.
+  - Comparables and reasons.
+  - Delete protection and cascades.
+  - `anon` access denied, RLS hiding rows even with a mistaken grant, and `service_role` read/write.
+- **Cleanup:** afterwards, all 10 tables had 0 rows, and `anon` had no table privileges, so the temporary grant was rolled back too.
+- **Catalog checks:**
+  - All 10 tables exist, each with a primary key.
+  - The 8 two-column ownership foreign keys are present.
+  - RLS is enabled on every table, and there are no policies.
+- **Privileges:**
+  - `anon` and `authenticated` have no `select`, `insert`, `update`, or `delete` privilege on any table, and can't execute `set_updated_at()`.
+  - `service_role` has all four privileges on all 10 tables and has `bypassrls`.
+- **Role checks** (one-off script, rolled back):
+  - As `authenticated`, select, insert, update, and delete all failed with `insufficient_privilege`. As `anon`, update and delete failed the same way.
+  - As `service_role`, inserting a retailer, product, evidence, claim, and price worked. The `updated_at` trigger ran, and deleting the product cascaded.
+  - No rows were left afterwards.
+
+### PGlite (2026-10-17, before deployment)
+
+The same migration and checks passed on PGlite 0.5.10 (PostgreSQL 18.6 in WebAssembly). The Supabase roles and default grants were recreated by hand for that run.
+
+### Differences between PGlite and Supabase
+
+No behavior differences: the migration and every check passed unchanged on both. The differences are in the environment only:
+- The PostgreSQL version: 18.6 on PGlite, 17.11 on Supabase.
+- PGlite needed the Supabase roles and default privileges recreated by hand. On Supabase they are built in, and the migration's revokes overrode Supabase's default grants to `anon` and `authenticated`.
+
+### Not yet tested
+
+- Requests through the HTTP Data API (PostgREST) using the publishable and secret keys. Only the database-role checks above have run.
+- Query performance at realistic data sizes.
 
 ## Mapping to contract 3.0.0
 
