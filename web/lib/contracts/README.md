@@ -89,7 +89,7 @@ Schema: `FullAnalysisResponseSchema`.
 | `processingStatus` | — | See above. |
 | `outcome` | `null` | See above. |
 | `submittedPageUrl` | — | The retailer URL the extension sent. Always present. |
-| `product` | `null` | See "Product summary" below. Required for `alternatives_found` and `no_suitable_alternative`. `null` for pending, failed, and unsupported pages. |
+| `product` | `null` | See "Product summary" below. Required for `alternatives_found` and `no_suitable_alternative`. `null` for unsupported pages. The current backend returns the captured product while `pending`; the schema also allows `null` there, as in the `analysis-pending` fixture, so render both. |
 | `price.listed` | `null` | No listed price was on the page. |
 | `price.regular` | `null` | No regular price was listed. Do not render a discount. |
 | `price.observedAt` | `null` | When the price fields were read. |
@@ -163,11 +163,13 @@ Schema: `ErrorResponseSchema` in `web/lib/contracts/error.ts`.
 
 `code` is `validation_error`, `unsupported_page`, `not_found`, or `insufficient_information`. `fields` is optional. Never include stack traces, credentials, environment variables, or database errors. `zodErrorToErrorResponse` maps a Zod error into this shape.
 
+As implemented, the backend also returns three server-only codes in the same shape: `forbidden` (403, writes disabled or the request failed the local-development guard), `internal_error` (500), and `service_unavailable` (503). They are not in `ErrorCodeSchema` for 3.0.0, so `ErrorResponseSchema.parse` rejects them. Clients should treat any non-2xx response with an unknown code as a generic failure. `insufficient_information` is defined but not returned as an HTTP error; it appears as an analysis `outcome`. See `web/lib/server/README.md` for each endpoint's statuses.
+
 ## Chrome extension integration
 
 The extension lives in `extension/` and is not part of the Next.js build, so it cannot import `@/lib/contracts`. It sends and receives plain JSON in the shapes above. Use the fixtures as the reference. Do not add a shared package for this yet.
 
-The routes below are not implemented yet. This is the agreed flow:
+`POST /api/analyses`, `POST /api/analyses/:id/process`, and `GET /api/analyses/:id` are implemented for local development only (see `web/lib/server/README.md`). This is the flow:
 
 1. The extension builds a JSON body matching `lib/contracts/fixtures/extension-request.json` → `data`, and sends it:
 
@@ -196,7 +198,9 @@ The routes below are not implemented yet. This is the agreed flow:
 
    Only open URLs on the website origin.
 
-5. The website page loads `GET /api/analyses/:id`, runs `FullAnalysisResponseSchema.parse`, and renders by `processingStatus` and then `outcome`. While `pending`, it can poll the same URL.
+5. Nothing processes analyses in the background. The website (or another orchestration layer) calls `POST /api/analyses/:id/process` once. It returns the same `FullAnalysisResponse` as the GET, and repeating it is safe.
+
+6. The website page loads `GET /api/analyses/:id`, runs `FullAnalysisResponseSchema.parse`, and renders by `processingStatus` and then `outcome`. While `pending`, it can poll the same URL.
 
 ## Fixtures
 

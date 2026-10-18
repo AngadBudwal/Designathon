@@ -2,6 +2,8 @@ import {
   StoreError,
   type AnalysisRow,
   type AnalysisStore,
+  type ComparableReasonRow,
+  type ComparableRow,
   type EvidenceRow,
   type MaterialClaimRow,
   type NewAnalysis,
@@ -12,6 +14,7 @@ import {
 } from "../store";
 
 type StoredAnalysis = NewAnalysis & Omit<AnalysisRow, "captured_at" | "extractor_version">;
+type StoredComparable = ComparableRow & { sequence: number };
 
 export type MemoryTables = {
   retailers: RetailerRow[];
@@ -21,6 +24,8 @@ export type MemoryTables = {
   claims: MaterialClaimRow[];
   prices: PriceObservationRow[];
   analyses: StoredAnalysis[];
+  comparables: StoredComparable[];
+  reasons: ComparableReasonRow[];
 };
 
 const unique = (detail: string) => new StoreError("unique_violation", "23505", detail);
@@ -39,6 +44,8 @@ export function createMemoryStore() {
     claims: [],
     prices: [],
     analyses: [],
+    comparables: [],
+    reasons: [],
   };
   const failures = new Map<keyof AnalysisStore, StoreError>();
   const calls: string[] = [];
@@ -130,8 +137,11 @@ export function createMemoryStore() {
     },
     async deleteProduct(id) {
       guard("deleteProduct");
-      if (tables.analyses.some((item) => item.selected_product_id === id)) {
-        throw foreignKey("analyses.selected_product_id");
+      if (
+        tables.analyses.some((item) => item.selected_product_id === id) ||
+        tables.comparables.some((item) => item.product_id === id)
+      ) {
+        throw foreignKey("product referenced by an analysis");
       }
       const evidenceIds = new Set(
         tables.evidence.filter((item) => item.product_id === id).map((item) => item.id),
@@ -266,6 +276,7 @@ export function createMemoryStore() {
         outcome: found.outcome,
         failure_code: found.failure_code,
         failure_message: found.failure_message,
+        finished_at: found.finished_at,
         captured_at: payload.capturedAt ?? null,
         extractor_version: payload.extractorVersion ?? null,
       };
@@ -281,7 +292,100 @@ export function createMemoryStore() {
         outcome: null,
         failure_code: null,
         failure_message: null,
+        finished_at: null,
       });
+    },
+    async completeAnalysis(id, outcome, finishedAt) {
+      guard("completeAnalysis");
+      const found = tables.analyses.find((item) => item.id === id && item.processing_status === "pending");
+      if (!found) return false;
+      if ((outcome === "alternatives_found" || outcome === "no_suitable_alternative") && !found.selected_product_id) {
+        throw new StoreError("check_violation", "23514", "analyses_outcome_requires_product");
+      }
+      Object.assign(found, { processing_status: "completed", outcome, finished_at: finishedAt });
+      return true;
+    },
+
+    async listProductsByIds(ids) {
+      guard("listProductsByIds");
+      return tables.products.filter((item) => ids.includes(item.id));
+    },
+    async listCandidateProducts(departments, excludeProductId) {
+      guard("listCandidateProducts");
+      return tables.products.filter(
+        (item) => departments.includes(item.department) && item.id !== excludeProductId,
+      );
+    },
+    async listEvidenceForProducts(productIds, capturedAtOrBefore) {
+      guard("listEvidenceForProducts");
+      const cutoff = new Date(capturedAtOrBefore).getTime();
+      return tables.evidence.filter(
+        (item) => productIds.includes(item.product_id) && new Date(item.captured_at).getTime() <= cutoff,
+      );
+    },
+    async listClaimsForEvidence(evidenceIds) {
+      guard("listClaimsForEvidence");
+      return tables.claims.filter((claim) => evidenceIds.includes(claim.evidence_id));
+    },
+    async listPricesForProducts(productIds, observedAtOrBefore) {
+      guard("listPricesForProducts");
+      const cutoff = new Date(observedAtOrBefore).getTime();
+      return tables.prices.filter(
+        (item) => productIds.includes(item.product_id) && new Date(item.observed_at).getTime() <= cutoff,
+      );
+    },
+
+    async listComparables(analysisId) {
+      guard("listComparables");
+      return tables.comparables
+        .filter((item) => item.analysis_id === analysisId)
+        .sort((a, b) => a.sequence - b.sequence)
+        .map(({ analysis_id, product_id, variant_id }) => ({ analysis_id, product_id, variant_id }));
+    },
+    async listComparableReasons(analysisId) {
+      guard("listComparableReasons");
+      return tables.reasons
+        .filter((item) => item.analysis_id === analysisId)
+        .sort(
+          (a, b) =>
+            a.product_id.localeCompare(b.product_id) ||
+            a.kind.localeCompare(b.kind) ||
+            a.code.localeCompare(b.code),
+        );
+    },
+    async deleteComparables(analysisId) {
+      guard("deleteComparables");
+      tables.comparables = tables.comparables.filter((item) => item.analysis_id !== analysisId);
+      tables.reasons = tables.reasons.filter((item) => item.analysis_id !== analysisId);
+    },
+    async insertComparable(values) {
+      guard("insertComparable");
+      const duplicate = tables.comparables.some(
+        (item) => item.analysis_id === values.analysis_id && item.product_id === values.product_id,
+      );
+      if (duplicate) throw unique("analysis_comparables_pkey");
+      if (!tables.products.some((item) => item.id === values.product_id)) {
+        throw foreignKey("analysis_comparables.product_id");
+      }
+      tables.comparables.push({ ...values, sequence: ++sequence });
+    },
+    async insertComparableReasons(values) {
+      guard("insertComparableReasons");
+      for (const reason of values) {
+        const parent = tables.comparables.some(
+          (item) => item.analysis_id === reason.analysis_id && item.product_id === reason.product_id,
+        );
+        if (!parent) throw foreignKey("analysis_comparable_reasons (analysis_id, product_id)");
+        const duplicate = [...tables.reasons, ...values.filter((other) => other !== reason)].some(
+          (other) =>
+            other.analysis_id === reason.analysis_id &&
+            other.product_id === reason.product_id &&
+            other.kind === reason.kind &&
+            other.code === reason.code,
+        );
+        if (duplicate) throw unique("analysis_comparable_reasons (analysis_id, product_id, kind, code)");
+      }
+      tables.reasons.push(...values.map((item) => ({ ...item })));
     },
   };
 

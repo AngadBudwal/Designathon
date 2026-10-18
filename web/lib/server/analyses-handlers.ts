@@ -9,6 +9,7 @@ import {
 import { readAppBaseUrl, ServerConfigError, type ServerEnv } from "./env";
 import { errorResponse, internalErrorResponse, jsonResponse, unavailableResponse } from "./http";
 import { checkIngestionRules, ingestAnalysis, UnsupportedPageError } from "./ingest";
+import { processAnalysis } from "./process-analysis";
 import { parseRetailerPage } from "./product-url";
 import { readAnalysis } from "./read-analysis";
 import { checkDevWriteAccess, jsonbTextBytes, MAX_REQUEST_BYTES, readJsonBody } from "./request-guard";
@@ -20,6 +21,7 @@ export type AnalysesDeps = {
   env: ServerEnv;
   getStore: () => AnalysisStore;
   newId: () => string;
+  now: () => Date;
   log: ServerLogger;
 };
 
@@ -83,17 +85,50 @@ export async function handleCreateAnalysis(request: Request, deps: AnalysesDeps)
   }
 }
 
-/** GET /api/analyses/:id */
-export async function handleGetAnalysis(id: string, deps: AnalysesDeps): Promise<Response> {
-  const parsedId = AnalysisIdSchema.safeParse(id);
-  if (!parsedId.success) {
-    return errorResponse(400, "validation_error", "The analysis id is invalid.", [
+function parseAnalysisId(id: string): { ok: true; id: string } | { ok: false; response: Response } {
+  const parsed = AnalysisIdSchema.safeParse(id);
+  if (parsed.success) return { ok: true, id: parsed.data.toLowerCase() };
+  return {
+    ok: false,
+    response: errorResponse(400, "validation_error", "The analysis id is invalid.", [
       { path: "id", code: "invalid_format", message: "Expected a UUID." },
-    ]);
-  }
+    ]),
+  };
+}
+
+/**
+ * POST /api/analyses/:id/process. Local development only, like ingestion.
+ * Nothing processes analyses automatically; a caller must trigger this explicitly.
+ */
+export async function handleProcessAnalysis(
+  request: Request,
+  id: string,
+  deps: AnalysesDeps,
+): Promise<Response> {
+  const denied = checkDevWriteAccess(request, deps.env);
+  if (denied) return denied;
+  const parsedId = parseAnalysisId(id);
+  if (!parsedId.ok) return parsedId.response;
 
   try {
-    const analysis = await readAnalysis(deps.getStore(), parsedId.data.toLowerCase());
+    const store = deps.getStore();
+    const result = await processAnalysis(store, parsedId.id, deps.now());
+    if (result.status === "not_found") return errorResponse(404, "not_found", "Analysis not found.");
+    const analysis = await readAnalysis(store, parsedId.id);
+    if (!analysis) return errorResponse(404, "not_found", "Analysis not found.");
+    return jsonResponse(analysis, 200);
+  } catch (error) {
+    return failureResponse(error, "process_analysis_failed", deps.log);
+  }
+}
+
+/** GET /api/analyses/:id */
+export async function handleGetAnalysis(id: string, deps: AnalysesDeps): Promise<Response> {
+  const parsedId = parseAnalysisId(id);
+  if (!parsedId.ok) return parsedId.response;
+
+  try {
+    const analysis = await readAnalysis(deps.getStore(), parsedId.id);
     if (!analysis) return errorResponse(404, "not_found", "Analysis not found.");
     return jsonResponse(analysis, 200);
   } catch (error) {

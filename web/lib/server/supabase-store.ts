@@ -6,6 +6,8 @@ import {
   StoreError,
   type AnalysisRow,
   type AnalysisStore,
+  type ComparableReasonRow,
+  type ComparableRow,
   type EvidenceRow,
   type MaterialClaimRow,
   type PriceObservationRow,
@@ -26,8 +28,11 @@ const PRICE_COLUMNS =
   "id, product_id, variant_id, evidence_id, listed_amount_minor, regular_amount_minor, currency, observed_at";
 const ANALYSIS_COLUMNS =
   "id, submitted_page_url, selected_product_id, selected_variant_id, processing_status, outcome, " +
-  "failure_code, failure_message, captured_at:request_payload->>capturedAt, " +
+  "failure_code, failure_message, finished_at, captured_at:request_payload->>capturedAt, " +
   "extractor_version:request_payload->>extractorVersion";
+
+const CANDIDATE_LIMIT = 100;
+const ROW_LIMIT = 1000;
 
 type PostgrestFailure = { code?: string | null; message?: string | null };
 
@@ -226,6 +231,103 @@ export function createSupabaseStore(db: SupabaseClient): AnalysisStore {
     },
     async insertAnalysis(values) {
       ok(await db.from("analyses").insert(values));
+    },
+    async completeAnalysis(id, outcome, finishedAt) {
+      const updated = rows<{ id: string }>(
+        await db
+          .from("analyses")
+          .update({ processing_status: "completed", outcome, finished_at: finishedAt })
+          .eq("id", id)
+          .eq("processing_status", "pending")
+          .select("id"),
+      );
+      return updated.length === 1;
+    },
+
+    async listProductsByIds(ids) {
+      if (ids.length === 0) return [];
+      return rows<ProductRow>(await db.from("products").select(PRODUCT_COLUMNS).in("id", ids));
+    },
+    async listCandidateProducts(departments, excludeProductId) {
+      if (departments.length === 0) return [];
+      return rows<ProductRow>(
+        await db
+          .from("products")
+          .select(PRODUCT_COLUMNS)
+          .in("department", departments)
+          .neq("id", excludeProductId)
+          .order("id")
+          .limit(CANDIDATE_LIMIT),
+      );
+    },
+    async listEvidenceForProducts(productIds, capturedAtOrBefore) {
+      if (productIds.length === 0) return [];
+      return rows<EvidenceRow>(
+        await db
+          .from("product_evidence")
+          .select(EVIDENCE_COLUMNS)
+          .in("product_id", productIds)
+          .lte("captured_at", capturedAtOrBefore)
+          .order("captured_at", { ascending: false })
+          .order("id")
+          .limit(ROW_LIMIT),
+      );
+    },
+    async listClaimsForEvidence(evidenceIds) {
+      if (evidenceIds.length === 0) return [];
+      return rows<MaterialClaimRow>(
+        await db
+          .from("material_claims")
+          .select(CLAIM_COLUMNS)
+          .in("evidence_id", evidenceIds)
+          .order("id")
+          .limit(ROW_LIMIT),
+      ).map(asClaim);
+    },
+    async listPricesForProducts(productIds, observedAtOrBefore) {
+      if (productIds.length === 0) return [];
+      return rows<PriceObservationRow>(
+        await db
+          .from("price_observations")
+          .select(PRICE_COLUMNS)
+          .in("product_id", productIds)
+          .lte("observed_at", observedAtOrBefore)
+          .order("observed_at", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(ROW_LIMIT),
+      ).map(asPrice);
+    },
+
+    async listComparables(analysisId) {
+      return rows<ComparableRow>(
+        await db
+          .from("analysis_comparables")
+          .select("analysis_id, product_id, variant_id")
+          .eq("analysis_id", analysisId)
+          .order("created_at")
+          .order("product_id"),
+      );
+    },
+    async listComparableReasons(analysisId) {
+      return rows<ComparableReasonRow>(
+        await db
+          .from("analysis_comparable_reasons")
+          .select("analysis_id, product_id, kind, code, detail")
+          .eq("analysis_id", analysisId)
+          .order("product_id")
+          .order("kind")
+          .order("code"),
+      );
+    },
+    async deleteComparables(analysisId) {
+      ok(await db.from("analysis_comparables").delete().eq("analysis_id", analysisId));
+    },
+    async insertComparable(values) {
+      ok(await db.from("analysis_comparables").insert(values));
+    },
+    async insertComparableReasons(values) {
+      if (values.length === 0) return;
+      ok(await db.from("analysis_comparable_reasons").insert(values));
     },
   };
 }

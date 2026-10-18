@@ -22,6 +22,7 @@ function setup(env: Record<string, string | undefined> = DEV_ENV) {
     env,
     getStore: () => memory.store,
     newId: () => `20000000-0000-4000-8000-${String(++ids).padStart(12, "0")}`,
+    now: () => new Date("2026-10-17T12:00:00.000Z"),
     log,
   };
   return { memory, deps, log };
